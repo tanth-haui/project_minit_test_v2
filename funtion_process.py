@@ -14,18 +14,49 @@ SIGNAL_MAP = {
 }
 
 # Kiểm tra thư mục input, tạo thư mục output nếu chưa có, và lấy danh sách file CSV
-def validate_and_prepare(input_folder, output_folder):
+# def validate_and_prepare(input_folder, output_folder):
+#     input_path = Path(input_folder)
+#     output_path = Path(output_folder)
+
+#     if not input_path.is_dir():
+#         raise FileNotFoundError(f"❌ Thư mục input không tồn tại: {input_path}")
+
+#     output_path.mkdir(parents=True, exist_ok=True)
+#     csv_files = list(input_path.glob("*.csv"))
+#     return csv_files, output_path
+
+def validate_and_prepare(input_folder, base_output_folder):
     input_path = Path(input_folder)
-    output_path = Path(output_folder)
+    base_output_path = Path(base_output_folder)
 
     if not input_path.is_dir():
         raise FileNotFoundError(f"❌ Thư mục input không tồn tại: {input_path}")
 
-    output_path.mkdir(parents=True, exist_ok=True)
+    # Kiểm tra nếu thư mục đã là "output" thì không thêm nữa
+    if base_output_path.name.lower() == "Output":
+        output_path = base_output_path
+    else:
+        output_path = base_output_path / "Output"
+
+    # Tạo nếu chưa tồn tại
+    if not output_path.exists():
+        try:
+            output_path.mkdir(parents=True)
+        except Exception as e:
+            raise PermissionError(f"❌ Không thể tạo thư mục output: {e}")
+
+    # Kiểm tra quyền ghi
+    try:
+        test_file = output_path / "test_write.tmp"
+        with open(test_file, "w") as f:
+            f.write("test")
+        test_file.unlink()
+    except Exception as error:
+        raise PermissionError(f"❌ Không thể ghi vào thư mục output: {error}")
+
     csv_files = list(input_path.glob("*.csv"))
     return csv_files, output_path
-
-
+    
 # Kiểm tra và chuyển đổi thời gian nhập vào từ chuỗi sang số nguyên
 def parse_time(start_str, end_str):
     try:
