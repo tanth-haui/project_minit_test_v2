@@ -23,7 +23,7 @@ def validate_and_prepare(input_folder, base_output_folder):
     if not input_path.is_dir():
         raise FileNotFoundError(f"❌ Thư mục input không tồn tại: {input_path}")
 
-    # Kiểm tra thư mục output cha tồn tại không
+    # Kiểm tra thư mục output cha tồn tại không 
     if not base_output_path.is_dir():
         raise FileNotFoundError(f"❌ Đường dẫn output không hợp lệ hoặc không tồn tại: {base_output_path}")
 
