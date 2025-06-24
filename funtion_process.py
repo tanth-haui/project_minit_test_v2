@@ -13,44 +13,39 @@ SIGNAL_MAP = {
     "AC Switch": "vSWMONT"
 }
 
-# Kiểm tra thư mục input, tạo thư mục output nếu chưa có, và lấy danh sách file CSV
-# def validate_and_prepare(input_folder, output_folder):
-#     input_path = Path(input_folder)
-#     output_path = Path(output_folder)
-
-#     if not input_path.is_dir():
-#         raise FileNotFoundError(f"❌ Thư mục input không tồn tại: {input_path}")
-
-#     output_path.mkdir(parents=True, exist_ok=True)
-#     csv_files = list(input_path.glob("*.csv"))
-#     return csv_files, output_path
-
 def validate_and_prepare(input_folder, base_output_folder):
+    from pathlib import Path
+
     input_path = Path(input_folder)
     base_output_path = Path(base_output_folder)
 
+    # Kiểm tra thư mục input
     if not input_path.is_dir():
         raise FileNotFoundError(f"❌ Thư mục input không tồn tại: {input_path}")
 
-    # Kiểm tra danh sách file .csv trước
+    # Kiểm tra thư mục output cha tồn tại không
+    if not base_output_path.is_dir():
+        raise FileNotFoundError(f"❌ Đường dẫn output không hợp lệ hoặc không tồn tại: {base_output_path}")
+
+    # Kiểm tra danh sách file .csv trong input
     csv_files = list(input_path.glob("*.csv"))
     if not csv_files:
         raise FileNotFoundError("⚠ Không tìm thấy file .csv nào trong thư mục input.")
 
-    # Định nghĩa output_path
+    # Tự gắn thêm /output nếu chưa có
     if base_output_path.name.lower() == "output":
         output_path = base_output_path
     else:
         output_path = base_output_path / "output"
 
-    # Tạo output folder nếu cần
+    # Tạo thư mục output nếu chưa có
     if not output_path.exists():
         try:
             output_path.mkdir(parents=True)
         except Exception as e:
             raise PermissionError(f"❌ Không thể tạo thư mục output: {e}")
 
-    # Kiểm tra quyền ghi
+    # Kiểm tra khả năng ghi
     try:
         test_file = output_path / "test_write.tmp"
         with open(test_file, "w") as f:
@@ -60,7 +55,8 @@ def validate_and_prepare(input_folder, base_output_folder):
         raise PermissionError(f"❌ Không thể ghi vào thư mục output: {e}")
 
     return csv_files, output_path
-    
+
+
 # Kiểm tra và chuyển đổi thời gian nhập vào từ chuỗi sang số nguyên
 def parse_time(start_str, end_str):
     try:
@@ -174,19 +170,46 @@ def create_output_csv(file_path, df_filtered, output_folder: Path):
     df_filtered.to_csv(output_file, index=False, encoding="utf-8-sig")
     print(f"✅ Đã tạo file: {output_file.name}")
 
-def run_processing(input_folder, output_folder, signal_selection, start_time_str, end_time_str):
-    files, output_path = validate_and_prepare(input_folder, output_folder)
+def run_processing(input_folder, base_output_folder, signal_selection, start_time_str, end_time_str):
+    from pathlib import Path
 
-    if not files:
+    input_path = Path(input_folder)
+    base_output_path = Path(base_output_folder)
+
+    if not input_path.is_dir():
+        raise FileNotFoundError(f"❌ Thư mục input không tồn tại: {input_path}")
+
+    csv_files = list(input_path.glob("*.csv"))
+    if not csv_files:
         raise FileNotFoundError("⚠ Không tìm thấy file .csv nào trong thư mục input.")
 
     start, end = parse_time(start_time_str, end_time_str)
+
     signal_prefix = SIGNAL_MAP.get(signal_selection)
     if not signal_prefix:
-        raise ValueError("Tín hiệu không hợp lệ.")
+        raise ValueError("❌ Tín hiệu không hợp lệ.")
+
+    if not base_output_path.is_dir():
+        raise FileNotFoundError(f"❌ Đường dẫn output không tồn tại: {base_output_path}")
+
+    output_path = base_output_path if base_output_path.name.lower() == "output" else base_output_path / "output"
+
+    if not output_path.exists():
+        try:
+            output_path.mkdir(parents=True)
+        except Exception as e:
+            raise PermissionError(f"❌ Không thể tạo thư mục output: {e}")
+
+    try:
+        test_file = output_path / "test_write.tmp"
+        with open(test_file, "w") as f:
+            f.write("test")
+        test_file.unlink()
+    except Exception as e:
+        raise PermissionError(f"❌ Không thể ghi vào thư mục output: {e}")
 
     results = {}
-    for file_path in files:
+    for file_path in csv_files:
         try:
             df = pd.read_csv(file_path)
             time_col = df.columns[0]
