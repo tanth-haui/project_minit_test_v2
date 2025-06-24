@@ -11,7 +11,6 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle("Mini Project GUI")
 
-        # Kết nối nút
         self.ui.Input_button.clicked.connect(self.select_input_folder)
         self.ui.Output_button.clicked.connect(self.select_output_folder)
         self.ui.Start_button.clicked.connect(self.start_processing)
@@ -33,7 +32,6 @@ class MainWindow(QMainWindow):
         end_time = self.ui.Input_End_Time.text()
         signal = self.ui.Signal.currentText()
 
-        # Kiểm tra đầu vào
         if not input_path or not output_path or not start_time or not end_time:
             QMessageBox.warning(self, "Thiếu thông tin", "Vui lòng nhập đầy đủ thông tin.")
             return
@@ -41,13 +39,15 @@ class MainWindow(QMainWindow):
         if not Path(input_path).is_dir():
             QMessageBox.critical(self, "Lỗi", "❌ Thư mục Input không tồn tại.")
             return
-        # print(f"[DEBUG] Output folder được nhập: {output_path}")
 
+        self.ui.Start_button.setEnabled(False)
         try:
             run_processing(input_path, output_path, signal, start_time, end_time)
             QMessageBox.information(self, "Thành công", "✅ Xử lý hoàn tất!")
         except Exception as error:
             QMessageBox.critical(self, "Lỗi xử lý", f"❌ Error:\n{str(error)}")
+        finally:
+            self.ui.Start_button.setEnabled(True)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
