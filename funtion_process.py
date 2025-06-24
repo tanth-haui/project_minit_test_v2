@@ -32,13 +32,18 @@ def validate_and_prepare(input_folder, base_output_folder):
     if not input_path.is_dir():
         raise FileNotFoundError(f"❌ Thư mục input không tồn tại: {input_path}")
 
-    # Kiểm tra nếu thư mục đã là "output" thì không thêm nữa
-    if base_output_path.name.lower() == "Output":
+    # Kiểm tra danh sách file .csv trước
+    csv_files = list(input_path.glob("*.csv"))
+    if not csv_files:
+        raise FileNotFoundError("⚠ Không tìm thấy file .csv nào trong thư mục input.")
+
+    # Định nghĩa output_path
+    if base_output_path.name.lower() == "output":
         output_path = base_output_path
     else:
-        output_path = base_output_path / "Output"
+        output_path = base_output_path / "output"
 
-    # Tạo nếu chưa tồn tại
+    # Tạo output folder nếu cần
     if not output_path.exists():
         try:
             output_path.mkdir(parents=True)
@@ -51,10 +56,9 @@ def validate_and_prepare(input_folder, base_output_folder):
         with open(test_file, "w") as f:
             f.write("test")
         test_file.unlink()
-    except Exception as error:
-        raise PermissionError(f"❌ Không thể ghi vào thư mục output: {error}")
+    except Exception as e:
+        raise PermissionError(f"❌ Không thể ghi vào thư mục output: {e}")
 
-    csv_files = list(input_path.glob("*.csv"))
     return csv_files, output_path
     
 # Kiểm tra và chuyển đổi thời gian nhập vào từ chuỗi sang số nguyên
